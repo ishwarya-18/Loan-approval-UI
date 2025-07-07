@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loan Approval Predictor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #dbeafe, #f0f9ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .form-container {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      width: 95%;
+      max-width: 1050px;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px 50px;
+    }
+
+    .form-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+    }
+
+    .column {
+      flex: 1;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #1e3a8a;
+      font-size: 24px;
+      border-bottom: 2px solid #60a5fa;
+      padding-bottom: 8px;
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: #f9fafb;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, select:focus {
+      border-color: #3b82f6;
+      outline: none;
+    }
+
+    .button-wrapper {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    button {
+      padding: 14px 36px;
+      font-size: 17px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+      transition: all 0.3s ease-in-out;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(59, 130, 246, 0.5);
+    }
+
+    #result {
+      margin-top: 25px;
+      font-weight: bold;
+      font-size: 20px;
+      color: #10b981;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        flex-direction: column;
+      }
+
+      .form-container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-container">
+  <form id="loan-form">
+    <div class="form-grid">
+      <!-- Left Column -->
+      <div class="column">
+        <h2>Applicant Info</h2>
+
+        <label for="Gender">Gender</label>
+        <select name="Gender" required>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+
+        <label for="Married">Married</label>
+        <select name="Married" required>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+
+        <label for="Dependents">Dependents</label>
+        <select name="Dependents" required>
+          <option>0</option>
+          <option>1</option>
+          <option>2</option>
+          <option>3+</option>
+        </select>
+
+        <label for="Education">Education</label>
+        <select name="Education" required>
+          <option>Graduate</option>
+          <option>Not Graduate</option>
+        </select>
+
+        <label for="Self_Employed">Self Employed</label>
+        <select name="Self_Employed" required>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+
+      <!-- Right Column -->
+      <div class="column">
+        <h2>Loan Details</h2>
+
+        <label for="ApplicantIncome">Applicant Income (in ₹1,000s per month)</label>
+        <input type="number" name="ApplicantIncome" placeholder="e.g., 60 for ₹60,000" required />
+
+        <label for="CoapplicantIncome">Coapplicant Income</label>
+        <input type="number" name="CoapplicantIncome" required />
+
+        <label for="LoanAmount">Loan Amount (in ₹1,000s)</label>
+        <input type="number" name="LoanAmount" required />
+
+        <label for="Loan_Amount_Term">Loan Term (In months)</label>
+        <input type="number" name="Loan_Amount_Term" required />
+
+        <label for="Credit_History">Credit History</label>
+        <select name="Credit_History" required>
+          <option value="1">Good</option>
+          <option value="0">Bad</option>
+        </select>
+
+        <label for="Property_Area">Property Area</label>
+        <select name="Property_Area" required>
+          <option>Urban</option>
+          <option>Semiurban</option>
+          <option>Rural</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Predict Button -->
+    <div class="button-wrapper">
+      <button type="submit">Predict</button>
+      <div id="result"></div>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.getElementById("loan-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {};
+    for (const [key, value] of formData.entries()) {
+      data[key] = isNaN(value) ? value : Number(value);
+    }
+
+    try {
+      const response = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      document.getElementById("result").textContent = `Loan ${result.loan_status}`;
+    } catch (error) {
+      document.getElementById("result").textContent = "Prediction failed. Please check your input.";
+      document.getElementById("result").style.color = "#ef4444"; // red color for failure
+    }
+  });
+</script>
+
+</body>
+</html>
